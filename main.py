@@ -13,7 +13,6 @@ def main():
     # - HumanPlayer()
     # - RandomAI()
     # - GreedyAI()
-    """
 
     # ==========================
     # == CREATE DATABASE CODE ==
@@ -60,18 +59,17 @@ def main():
         print(f"  Average score: {score:.4f}")
         print(f"  Times seen: {count}")
 
-    """
     # ==============
     # == GUI CODE ==
     # ==============
-
+    """
     app = QApplication(sys.argv)
     # Human (RED) vs Random AI (BLUE) - default behavior
     
     w = HexWidget(size=7, red_player=HumanPlayer(), blue_player=HumanPlayer())
     w.show()
     sys.exit(app.exec())
-
+    """
 
 if __name__ == "__main__":
     main()
