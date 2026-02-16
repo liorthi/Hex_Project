@@ -144,29 +144,48 @@ class HeuristicAI(Player):
 
     def _preblock(self, board, opponent_min_distance):
         """
-        The function adds a "preblock", the option to block the opponent's move before he wins.
+        Detect which direction the opponent is advancing from
+        and block the appropriate edge.
         """
-        if self.opponent == BLUE:
-            _, left_map, right_map = board.blue_distances()
-            edge_col = board.size - 1
-        else:
-            _, left_map, right_map = board.red_distances()
-            edge_row = board.size - 1
+        if opponent_min_distance != 2:
+            return None
+
+        # Find all opponent pieces
+        opponent_pieces = [(r, c) for r in range(board.size)
+                           for c in range(board.size)
+                           if board.grid[r, c] == self.opponent]
+
+        if not opponent_pieces:
+            return None
 
         empty = set(board.empty_cells())
+        is_red = (self.opponent == RED)
 
-        # collect shortest-path cells that are on the edge
-        for pos in left_map:
-            if pos in right_map:
-                if left_map[pos] + right_map[pos] == opponent_min_distance:
-                    r, c = pos
+        # Calculate average position (row for RED, col for BLUE)
+        avg_pos = (sum(r for r, c in opponent_pieces) if is_red
+                   else sum(c for r, c in opponent_pieces)) / len(opponent_pieces)
 
-                    if self.opponent == BLUE:
-                        if c == edge_col and (r, c) in empty:
-                            return r, c
-                    else:
-                        if r == edge_row and (r, c) in empty:
-                            return r, c
+        # Determine if coming from start edge (top/left) or end edge (bottom/right)
+        from_start = avg_pos < board.size / 2
+
+        if from_start:
+            # Coming from start edge, block at end edge
+            extreme_pos = max(opponent_pieces, key=lambda p: p[0] if is_red else p[1])
+            preblock_r = board.size - 1 if is_red else extreme_pos[0]
+            preblock_c = extreme_pos[1] - 1 if is_red else board.size - 1
+        else:
+            # Coming from end edge, block at start edge
+            extreme_pos = min(opponent_pieces, key=lambda p: p[0] if is_red else p[1])
+            preblock_r = 0 if is_red else extreme_pos[0]
+            preblock_c = extreme_pos[1] + 1 if is_red else 0
+
+        # Validate and return
+        if is_red:
+            if 0 <= preblock_c < board.size and (preblock_r, preblock_c) in empty:
+                return preblock_r, preblock_c
+        else:
+            if (preblock_r, preblock_c) in empty:
+                return preblock_r, preblock_c
 
         return None
 

@@ -1,29 +1,29 @@
 import sys
 from PySide6.QtWidgets import QApplication
+from controller import GameController
 from ui import HexWidget
-from player import RandomAI, HumanPlayer
-from Tournament import Tournament
 from player import RandomAI, HumanPlayer, GreedyAI, HeuristicAI
 from board import RED, BLUE
 from DatabaseHandler import DatabaseHandler
+from Tournament import Tournament
 
 
 def main():
-    # players avalable:
+    # Players available:
     # - HumanPlayer()
     # - RandomAI()
-    # - GreedyAI()
+    # - GreedyAI(database_path, color)
+    # - HeuristicAI(database_path, color)
 
     # ==========================
     # == CREATE DATABASE CODE ==
     # ==========================
-    number_of_games = 100_000
+    """
+    number_of_games = 1000
     database_path = r"board_database_100_000_games_greedy.json"
 
     red = RandomAI()
     blue = HeuristicAI(database_path, BLUE)
-    #blue = GreedyAI(database_path ,BLUE)
-    #blue = RandomAI()
 
     tournament = Tournament(
         num_games=number_of_games,
@@ -31,17 +31,15 @@ def main():
         red_player_class=red,
         blue_player_class=blue,
         gamma=0.9
-
     )
 
-    #Note: winner = blue, which means the "human" is the red player
     print(f"Running {number_of_games} games...")
     results, board_database, winners = tournament.run_multiple_games(verbose=False)
 
     print(f"Winners: {winners}")
 
     # Save the board database (main output)
-    DatabaseHandler.save_board_database(board_database, filename=f"board_database_{number_of_games}_games_heuristic.json")
+    # DatabaseHandler.save_board_database(board_database, filename=f"board_database_{number_of_games}_games_heuristic.json")
 
     # Optionally save game metadata
     # DatabaseHandler.save_games_to_json(results, filename)
@@ -59,18 +57,41 @@ def main():
         print(f"  Key: {example_key[:30]}...")
         print(f"  Average score: {score:.4f}")
         print(f"  Times seen: {count}")
+    """
 
     # ==============
     # == GUI CODE ==
     # ==============
-    """
+
+    # Setup players
+    database_path = r"board_database_100_000_games_greedy.json"
+    #red_player = RandomAI()
+    red_player = HumanPlayer()
+    blue_player = HeuristicAI(database_path, BLUE)
+    #blue_player = HumanPlayer()
+
+    # Create Qt application
     app = QApplication(sys.argv)
-    # Human (RED) vs Random AI (BLUE) - default behavior
-    
-    w = HexWidget(size=7, red_player=HumanPlayer(), blue_player=HumanPlayer())
-    w.show()
+
+    # Create controller (Model + Controller)
+    controller = GameController(
+        board_size=7,
+        red_player=red_player,
+        blue_player=blue_player
+    )
+
+    # Create UI (View)
+    ui = HexWidget(controller)
+
+    # Connect controller to UI
+    controller.set_ui(ui)
+
+    # Show UI
+    ui.show()
+
+    # Run application
     sys.exit(app.exec())
-    """
+
 
 if __name__ == "__main__":
     main()
