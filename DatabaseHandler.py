@@ -1,5 +1,6 @@
 import json
 from pathlib import Path
+import torch
 
 class DatabaseHandler:
     @staticmethod
@@ -93,4 +94,108 @@ class DatabaseHandler:
         print(f"Loaded {len(board_database)} board states from {filepath}")
         return board_database
 
+    @staticmethod
+    def load_board_database_encoded(filename):
+        """
+        Load a board database from game_database/<filename> and one-hot encodes it
 
+        Args:
+            filename: Name of the JSON file (e.g. "Hex_database_games.json")
+
+        Returns:
+            (tensor: X_list, tensor: Y_list)
+        """
+        raw_data = DatabaseHandler.load_board_database(filename)
+
+        X_list = []
+        Y_list = []
+
+        for board_str, values in raw_data.items():
+            # Clean: "[001...]" -> "001..."
+            clean_board = board_str[1:-1]
+            clean_board = clean_board.replace(",", "").replace(" ", "")
+
+            # Encode data
+            board_vector = DatabaseHandler.encode_single_board(clean_board)
+
+            X_list.append(board_vector)
+            Y_list.append([values[0]])
+
+        return torch.tensor(X_list), torch.tensor(Y_list)
+
+    @staticmethod
+    def encode_single_board(board_str):
+        """
+        One-hot encode a single board string.
+
+        Args:
+            board_str: String representation of board (e.g., "[0,0,1,2,...]")
+
+        Returns:
+            list: One-hot encoded board vector
+        """
+        # Clean: "[001...]" -> "001..."
+        clean_board = board_str[1:-1]
+        clean_board = clean_board.replace(",", "").replace(" ", "")
+
+        # Encode: 0 -> [1,0,0], 1 -> [0,1,0], 2 -> [0,0,1]
+        board_vector = []
+        for char in clean_board:
+            val = int(char)
+            one_hot = [0.0, 0.0, 0.0]
+            one_hot[val] = 1.0
+            board_vector.extend(one_hot)
+
+        return board_vector
+
+    @staticmethod
+    def predict_score(model, board_str, device):
+        """
+        Takes a trained model and a board string, and outputs the predicted score.
+
+        Args:
+            model: Trained neural network model
+            board_str: String representation of board
+            device: Device to run prediction on
+
+        Returns:
+            float: Predicted score
+        """
+        # 1. Encode the board using our helper function
+        board_vector = DatabaseHandler.encode_single_board(board_str)
+
+        # 2. Convert to tensor and add a "batch" dimension (shape becomes [1, 147])
+        x_tensor = torch.tensor([board_vector]).to(device)
+
+        # 3. Make the prediction without calculating gradients
+        with torch.no_grad():
+            prediction = model(x_tensor)
+
+        # 4. Extract the single float value from the resulting tensor
+        return prediction.item()
+
+    @staticmethod
+    def load_network(model_path, device, net):
+        """
+        Loads a saved Net model from a .pth file.
+
+        Args:
+            model_path: Path to saved model
+            device: Device to use
+            net: Net model
+
+        Returns:
+            The model
+        """
+        print(f"Loading model from {model_path}...")
+
+        # 1. Instantiate a fresh model
+        model = net().to(device)
+
+        # 2. Load the saved weights into the model
+        model.load_state_dict(torch.load(model_path, map_location=device, weights_only=True))
+
+        # 3. Set the model to evaluation mode
+        model.eval()
+
+        return model

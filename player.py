@@ -2,6 +2,11 @@ import random
 from board import Board, EMPTY, BLUE, RED
 from DatabaseHandler import DatabaseHandler
 
+import torch
+import torch.nn as nn
+import torch.optim as optim
+from torch.utils.data import TensorDataset, DataLoader, random_split
+
 
 class Player:
     def get_move(self, board):
@@ -245,3 +250,26 @@ class HeuristicAI(Player):
                 best_move = (r, c)
 
         return best_move
+
+
+class HexNet(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.layer1 = nn.Linear(7*7*3, 256)
+        self.layer2 = nn.Linear(256, 64)
+        self.output = nn.Linear(64, 1)
+
+    def forward(self, x):
+        # Layer 1
+        x = self.layer1(x)
+        x = torch.relu(x)
+
+        # Layer 2
+        x = self.layer2(x)
+        x = torch.relu(x)
+
+        # Output layer
+        x = self.output(x)
+        x = torch.sigmoid(x)
+
+        return x
