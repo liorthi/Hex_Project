@@ -6,14 +6,12 @@ class AiManager:
 
     # Training
     @staticmethod
-    def train(model, train_loader, test_loader, device, epochs=2000, learning_rate=0.001):
-        loss_fn = nn.MSELoss()
-        optimizer = optim.AdamW(model.parameters(), lr=learning_rate, weight_decay=0.01)
+    def train(model, train_loader, test_loader, device, epochs=2000, learning_rate=0.001,
+              loss_fn = None, optimizer = None):
 
         train_loss_history = []
         test_loss_history = []
 
-        print("\nStarting Training Loop...")
         for epoch in range(epochs):
             model.train()
             total_loss = 0
@@ -35,11 +33,6 @@ class AiManager:
 
             avg_loss = total_loss / len(train_loader)
             train_loss_history.append(avg_loss)
-
-            if epoch % 1 == 0:
-                avg_test_loss = AiManager.evaluate(model, test_loader, device)
-                test_loss_history.append(avg_test_loss)
-                print(f"Epoch {epoch} | Average Training Loss: {avg_loss:.5f} | Average Test Loss: {avg_test_loss:.5f}")
 
         return train_loss_history, test_loss_history
 

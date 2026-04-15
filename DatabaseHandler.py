@@ -115,7 +115,7 @@ class DatabaseHandler:
             clean_board = board_str[1:-1]
             clean_board = clean_board.replace(",", "").replace(" ", "")
 
-            # Encode data
+            # Encode: 0 -> [1,0,0], 1 -> [0,1,0], 2 -> [0,0,1]
             board_vector = DatabaseHandler.encode_single_board(clean_board)
 
             X_list.append(board_vector)
@@ -134,13 +134,9 @@ class DatabaseHandler:
         Returns:
             list: One-hot encoded board vector
         """
-        # Clean: "[001...]" -> "001..."
-        clean_board = board_str[1:-1]
-        clean_board = clean_board.replace(",", "").replace(" ", "")
-
         # Encode: 0 -> [1,0,0], 1 -> [0,1,0], 2 -> [0,0,1]
         board_vector = []
-        for char in clean_board:
+        for char in board_str:
             val = int(char)
             one_hot = [0.0, 0.0, 0.0]
             one_hot[val] = 1.0

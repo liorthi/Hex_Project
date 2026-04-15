@@ -9,6 +9,8 @@ from Tournament import Tournament
 from AiManager import AiManager
 
 import torch
+import torch.nn as nn
+import torch.optim as optim
 from torch.utils.data import TensorDataset, DataLoader, random_split
 import matplotlib.pyplot as plt
 
@@ -98,7 +100,8 @@ def train_neural_network(database_filename="board_database_100_000_games_heurist
                          batch_size=64,
                          learning_rate=0.001,
                          train_split=0.7,
-                         model_save_path="hex_model.pth"):
+                         model_save_name="hex_model",
+                         save_interval=50):
     """
     Train a neural network on the board database
 
@@ -108,7 +111,8 @@ def train_neural_network(database_filename="board_database_100_000_games_heurist
         batch_size: Batch size for training
         learning_rate: Learning rate for optimizer
         train_split: Fraction of data to use for training (rest for testing)
-        model_save_path: Path to save the trained model
+        model_save_name: Name of model to save
+        save_interval: Number of epochs to save model
     """
     # 0. Choose device
     if torch.cuda.is_available():
@@ -141,20 +145,39 @@ def train_neural_network(database_filename="board_database_100_000_games_heurist
 
     # 3. Instantiate Model
     net = HexNet().to(device)
+    loss_fn = nn.MSELoss()
+    optimizer = optim.AdamW(net.parameters(), lr=learning_rate, weight_decay=0.01)
 
-    # 4. Execute Training
-    train_loss_history, test_loss_history = AiManager.train(
-        net,
-        train_loader,
-        test_loader,
-        device,
-        epochs=epochs,
-        learning_rate=learning_rate
-    )
+    train_loss_history = []
+    test_loss_history = []
 
-    # 5. Save the result
-    torch.save(net.state_dict(), model_save_path)
-    print(f"\nModel saved to {model_save_path}")
+    epochs_left = epochs
+    epochs_done = 0
+
+    while True:
+        epochs_now = min(save_interval, epochs_left)
+
+        chunk_train, chunk_test = AiManager.train(
+            net,
+            train_loader,
+            test_loader,
+            device,
+            epochs=epochs_now,
+            learning_rate=learning_rate,
+            loss_fn=loss_fn,
+            optimizer=optimizer,
+        )
+
+        train_loss_history.extend(chunk_train)
+        test_loss_history.extend(chunk_test)
+
+        epochs_done += epochs_now
+        torch.save(net.state_dict(), f"{model_save_name}_epoch_{epochs_done}.pth")
+        print(f"Checkpoint saved at epoch {epochs_done}")
+
+        epochs_left -= epochs_now
+        if epochs_left <= 0:
+            break
 
     # 6. Plot loss over epochs
     plt.figure()
@@ -162,10 +185,7 @@ def train_neural_network(database_filename="board_database_100_000_games_heurist
     # Train loss (every epoch)
     epoch_axis = list(range(len(train_loss_history)))
     plt.plot(epoch_axis, train_loss_history, label="Train Loss")
-
-    # Test loss (every 50 epochs)
-    eval_axis = list(range(0, len(train_loss_history), 50))
-    plt.plot(eval_axis, test_loss_history, label="Test Loss")
+    plt.plot(epoch_axis, test_loss_history, label="Test Loss")
 
     plt.title('Loss over epochs: train and test')
     plt.xlabel('Epochs')
@@ -176,7 +196,7 @@ def train_neural_network(database_filename="board_database_100_000_games_heurist
 
 
 def run_inference(model_path="hex_model.pth",
-                  board_str="[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]"):
+                  board_str="0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0"):
     """
     Run inference on a single board state
 
@@ -196,11 +216,6 @@ def run_inference(model_path="hex_model.pth",
     print(f'Predicted Score: {score:.4f}')
 
     return score
-
-
-# ═══════════════════════════════════════════════════════════════════════════
-# MAIN ENTRY POINT
-# ═══════════════════════════════════════════════════════════════════════════
 
 def main():
     """
@@ -227,16 +242,17 @@ def main():
     elif operation_mode == "TRAIN":
         train_neural_network(
             database_filename="board_database_100_000_games_heuristic.json",
-            epochs=50,
+            epochs=3,
             batch_size=64,
-            learning_rate=0.001,
+            learning_rate=0.01,
             train_split=0.7,
-            model_save_path="hex_model.pth"
+            model_save_name="hex_model",
+            save_interval=1,
         )
 
     elif operation_mode == "INFERENCE":
         # Example board state (empty 7x7 board)
-        board = "[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]"
+        board = "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,]"
         run_inference(
             model_path="hex_model_50_epochs.pth",
             board_str=board
