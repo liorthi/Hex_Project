@@ -1,6 +1,5 @@
 import torch
 import torch.nn as nn
-import torch.optim as optim
 
 class AiManager:
 
@@ -53,3 +52,26 @@ class AiManager:
         avg_loss = total_loss / len(loader)
         model.train()  # Reset to training mode
         return avg_loss
+
+
+class HexNet(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.layer1 = nn.Linear(7*7*3, 256)
+        self.layer2 = nn.Linear(256, 64)
+        self.output = nn.Linear(64, 1)
+
+    def forward(self, x):
+        # Layer 1
+        x = self.layer1(x)
+        x = torch.relu(x)
+
+        # Layer 2
+        x = self.layer2(x)
+        x = torch.relu(x)
+
+        # Output layer
+        x = self.output(x)
+        x = torch.sigmoid(x)
+
+        return x

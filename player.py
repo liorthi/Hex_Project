@@ -1,12 +1,9 @@
 import random
 from board import Board, EMPTY, BLUE, RED
 from DatabaseHandler import DatabaseHandler
+from AiManager import HexNet
 
 import torch
-import torch.nn as nn
-import torch.optim as optim
-from torch.utils.data import TensorDataset, DataLoader, random_split
-
 
 class Player:
     def get_move(self, board):
@@ -251,25 +248,34 @@ class HeuristicAI(Player):
 
         return best_move
 
+class NeuralAI(Player):
+    def __init__(self, model_path, color):
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.color = color
 
-class HexNet(nn.Module):
-    def __init__(self):
-        super().__init__()
-        self.layer1 = nn.Linear(7*7*3, 256)
-        self.layer2 = nn.Linear(256, 64)
-        self.output = nn.Linear(64, 1)
+        self.model = DatabaseHandler.load_network(model_path, self.device, HexNet)
+        self.model.eval()
 
-    def forward(self, x):
-        # Layer 1
-        x = self.layer1(x)
-        x = torch.relu(x)
+    def get_move(self, board):
+        best_move = None
+        best_score = -float('inf')
 
-        # Layer 2
-        x = self.layer2(x)
-        x = torch.relu(x)
+        for r, c in board.empty_cells():
 
-        # Output layer
-        x = self.output(x)
-        x = torch.sigmoid(x)
+            # Create board copy
+            temp = Board(board.size)
+            temp.grid = board.grid.copy()
 
-        return x
+            # Apply move
+            temp.place(r, c, self.color)
+
+            board_str = str(temp.grid.flatten().tolist())[1:-1].replace(",", "").replace(" ", "")
+
+            # Lookup board score
+            score = DatabaseHandler.predict_score(self.model, board_str, self.device)
+
+            if score > best_score:
+                best_score = score
+                best_move = (r,c)
+
+        return best_move
