@@ -24,11 +24,12 @@ def run_gui(database_path="board_database_100_000_games_greedy.json"):
     Args:
         database_path: Path to the board database file
     """
-    ai_path = "hex_model_epoch_350.pth"
 
     # Setup players
     red_player = HumanPlayer()
-    blue_player = NeuralAI(ai_path, BLUE)
+    #blue_player = NeuralAI("hex_model_epoch_350.pth", BLUE)
+    #blue_player = HeuristicAI(database_path, BLUE)
+    #blue_player = GreedyAI(database_path, BLUE)
 
     # Create Qt application
     app = QApplication(sys.argv)
@@ -53,16 +54,18 @@ def run_gui(database_path="board_database_100_000_games_greedy.json"):
     sys.exit(app.exec())
 
 
-def create_database(num_games=1000, database_path="board_database_100_000_games_greedy.json"):
+def create_database(num_games=1000, database_path="board_database_100_000_games_heuristic.json", save_games=True):
     """
     Create a board database by running multiple games
 
     Args:
         num_games: Number of games to run
         database_path: Path to load existing database (for GreedyAI)
+        save_games: If true, save the game database
     """
     red = RandomAI()
     blue = NeuralAI("hex_model_epoch_350.pth", BLUE)
+    #blue = GreedyAI(database_path, BLUE)
 
     tournament = Tournament(
         num_games=num_games,
@@ -78,10 +81,11 @@ def create_database(num_games=1000, database_path="board_database_100_000_games_
     print(f"Winners: {winners}")
 
     # Save the board database (main output)
-    #DatabaseHandler.save_board_database(
-    #    board_database,
-    #    filename=f"board_database_{num_games}_games_heuristic.json"
-    #)
+    if save_games:
+        DatabaseHandler.save_board_database(
+            board_database,
+            filename=f"board_database_{num_games}_games_heuristic.json"
+        )
 
     # Print some statistics
     avg_moves = sum(r['total_moves'] for r in results) / len(results)
@@ -269,15 +273,16 @@ def main():
         - "INFERENCE": Run prediction on a single board state
     """
 
-    operation_mode = "CREATE_DATABASE"  # Options: "GUI", "CREATE_DATABASE", "TRAIN", "EVALUATE_CHECKPOINTS"
+    operation_mode = "GUI"  # Options: "GUI", "CREATE_DATABASE", "TRAIN", "EVALUATE_CHECKPOINTS"
 
     if operation_mode == "GUI":
-        run_gui(database_path="board_database_100_000_games_greedy.json")
+        run_gui()
 
     elif operation_mode == "CREATE_DATABASE":
         create_database(
             num_games=1000,
-            database_path="board_database_100_000_games_greedy.json"
+            database_path="board_database_100_000_games_heuristic.json",
+            save_games=False
         )
 
     elif operation_mode == "TRAIN":
@@ -285,7 +290,7 @@ def main():
             database_filename="board_database_100_000_games_heuristic.json",
             epochs=1000,
             batch_size=64,
-            learning_rate=0.001,
+            learning_rate=0.01,
             train_split=0.7,
             model_save_name="hex_model",
             save_interval=50,

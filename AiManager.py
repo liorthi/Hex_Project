@@ -57,18 +57,20 @@ class AiManager:
 class HexNet(nn.Module):
     def __init__(self):
         super().__init__()
-        self.layer1 = nn.Linear(7*7*3, 256)
-        self.layer2 = nn.Linear(256, 64)
+        self.layer1 = nn.Linear(7*7*3, 180)
+        self.layer2 = nn.Linear(180, 64)
         self.output = nn.Linear(64, 1)
+
+        self.leaky_relu = nn.LeakyReLU(negative_slope=0.01)
 
     def forward(self, x):
         # Layer 1
         x = self.layer1(x)
-        x = torch.relu(x)
+        x = self.leaky_relu(x)
 
         # Layer 2
         x = self.layer2(x)
-        x = torch.relu(x)
+        x = self.leaky_relu(x)
 
         # Output layer
         x = self.output(x)
