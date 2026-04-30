@@ -17,7 +17,7 @@ import glob # for finding file names
 
 # OPERATION MODES
 
-def run_gui(database_path="board_database_100_000_games_greedy.json"):
+def run_gui(database_path="board_database_100_000_games_heuristic.json"):
     """
     Run the GUI application
 
@@ -27,7 +27,9 @@ def run_gui(database_path="board_database_100_000_games_greedy.json"):
 
     # Setup players
     red_player = HumanPlayer()
-    #blue_player = NeuralAI("hex_model_epoch_350.pth", BLUE)
+    #red_player = HeuristicAI(database_path, RED)
+
+    blue_player = NeuralAI("hex_model_v2_epoch_40.pth", BLUE)
     #blue_player = HeuristicAI(database_path, BLUE)
     #blue_player = GreedyAI(database_path, BLUE)
 
@@ -288,12 +290,12 @@ def main():
     elif operation_mode == "TRAIN":
         train_neural_network(
             database_filename="board_database_100_000_games_heuristic.json",
-            epochs=1000,
+            epochs=400,
             batch_size=64,
             learning_rate=0.01,
             train_split=0.7,
-            model_save_name="hex_model",
-            save_interval=50,
+            model_save_name="hex_model_v2",
+            save_interval=40,
         )
 
     elif operation_mode == "EVALUATE_CHECKPOINTS":

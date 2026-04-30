@@ -6,32 +6,44 @@ class AiManager:
     # Training
     @staticmethod
     def train(model, train_loader, test_loader, device, epochs=2000, learning_rate=0.001,
-              loss_fn = None, optimizer = None):
-
+          loss_fn=None, optimizer=None):
         train_loss_history = []
         test_loss_history = []
 
         for epoch in range(epochs):
+            # --- Training ---
             model.train()
-            total_loss = 0
+            total_train_loss = 0
 
             for batch_X, batch_Y in train_loader:
                 batch_X, batch_Y = batch_X.to(device), batch_Y.to(device)
 
                 optimizer.zero_grad()
-                # Forward pass
                 y_pred = model(batch_X)
-                # Calculate loss
                 loss = loss_fn(y_pred, batch_Y)
-                # Backward pass
                 loss.backward()
-                # Weight update
                 optimizer.step()
 
-                total_loss += loss.item()
+                total_train_loss += loss.item()
 
-            avg_loss = total_loss / len(train_loader)
-            train_loss_history.append(avg_loss)
+            avg_train_loss = total_train_loss / len(train_loader)
+            train_loss_history.append(avg_train_loss)
+
+            # --- Evaluation ---
+            model.eval()
+            total_test_loss = 0
+
+            with torch.no_grad():
+                for batch_X, batch_Y in test_loader:
+                    batch_X, batch_Y = batch_X.to(device), batch_Y.to(device)
+                    y_pred = model(batch_X)
+                    loss = loss_fn(y_pred, batch_Y)
+                    total_test_loss += loss.item()
+
+            avg_test_loss = total_test_loss / len(test_loader)
+            test_loss_history.append(avg_test_loss)
+
+            print(f"Epoch {epoch + 1}/{epochs} | Train Loss: {avg_train_loss:.6f} | Test Loss: {avg_test_loss:.6f}")
 
         return train_loss_history, test_loss_history
 
