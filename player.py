@@ -75,12 +75,17 @@ class GreedyAI(Player):
 
 
 class HeuristicAI(Player):
-    def __init__(self, database_path, color):
+    def __init__(self, database_path, color, gama=0.0):
         self._greedy = GreedyAI(database_path, color)
         self.color = color
         self.opponent = RED if color == BLUE else BLUE
+        self.gama = gama
 
     def get_move(self, board):
+        # Random move with small probability to add variability
+        if random.random() < self.gama:
+            return random.choice(board.empty_cells())
+
         # RULES OVERRIDE
         override_move = self._apply_rules(board)
         if override_move is not None:

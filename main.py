@@ -169,10 +169,6 @@ def train_neural_network(database_filename="board_database_250_000_games_heurist
     train_loss_history = []
     test_loss_history = []
 
-    epochs_left = epochs
-    epochs_done = 0
-
-
     train_loss_history, test_loss_history = AiManager.train(
         model=net,
         train_loader=train_loader,
@@ -217,18 +213,18 @@ def main():
         - "TRAIN": Train neural network on existing database
     """
 
-    operation_mode = "CREATE_DATABASE"  # Options: "GUI", "CREATE_DATABASE", "TRAIN"
+    operation_mode = "GUI"  # Options: "GUI", "CREATE_DATABASE", "TRAIN"
 
     if operation_mode == "GUI":
         run_gui(
-            red_player=HumanPlayer(),
-            blue_player=HeuristicAI("random_VS_random_perspective_BLUE.json", BLUE)
+            red_player=HeuristicAI("random_VS_random_perspective_RED.json", RED, gama=0.1),
+            blue_player=HeuristicAI("random_VS_random_perspective_BLUE.json", BLUE),
         )
 
     elif operation_mode == "CREATE_DATABASE":
         create_database(
             num_games=100,
-            red_player=HeuristicAI("random_VS_random_perspective_RED.json", RED),
+            red_player=HeuristicAI("random_VS_random_perspective_RED.json", RED, gama=0.1),
             blue_player=HeuristicAI("random_VS_random_perspective_BLUE.json", BLUE),
             save_games=False,
             perspective=RED
