@@ -110,9 +110,10 @@ def train_neural_network(database_filename="board_database_100_000_games_heurist
                          learning_rate=0.001,
                          train_split=0.7,
                          model_save_name="hex_model",
+                         early_stopping_patience=30,
                          save_interval=50):
     """
-    Train a neural network on the board database
+    Train a neural network on the board database with ReduceLROnPlateau scheduler
 
     Args:
         database_filename: JSON file containing board states and scores
@@ -121,7 +122,7 @@ def train_neural_network(database_filename="board_database_100_000_games_heurist
         learning_rate: Learning rate for optimizer
         train_split: Fraction of data to use for training (rest for testing)
         model_save_name: Name of model to save
-        save_interval: Number of epochs to save model
+        save_interval: Number of epochs between checkpoints
     """
     # 0. Choose device
     if torch.cuda.is_available():
@@ -152,10 +153,20 @@ def train_neural_network(database_filename="board_database_100_000_games_heurist
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 
-    # 3. Instantiate Model
+    # 3. Instantiate Model, Loss, Optimizer, and Scheduler
     net = HexNet().to(device)
     loss_fn = nn.MSELoss()
     optimizer = optim.AdamW(net.parameters(), lr=learning_rate, weight_decay=0.01)
+    
+    # ReduceLROnPlateau scheduler
+    # Reduces learning rate when test loss plateaus
+    scheduler = optim.lr_scheduler.ReduceLROnPlateau(
+        optimizer,
+        mode='min',           # We want to minimize the loss
+        factor=0.5,           # Reduce LR by half when plateau detected
+        patience=10,          # Wait 10 epochs before reducing
+        min_lr=1e-6          # Don't go below this learning rate
+    )
 
     train_loss_history = []
     test_loss_history = []
@@ -163,45 +174,40 @@ def train_neural_network(database_filename="board_database_100_000_games_heurist
     epochs_left = epochs
     epochs_done = 0
 
-    while True:
-        epochs_now = min(save_interval, epochs_left)
 
-        chunk_train, chunk_test = AiManager.train(
-            net,
-            train_loader,
-            test_loader,
-            device,
-            epochs=epochs_now,
-            learning_rate=learning_rate,
-            loss_fn=loss_fn,
-            optimizer=optimizer,
-        )
-
-        train_loss_history.extend(chunk_train)
-        test_loss_history.extend(chunk_test)
-
-        epochs_done += epochs_now
-        torch.save(net.state_dict(), f"{model_save_name}_epoch_{epochs_done}.pth")
-        print(f"Checkpoint saved at epoch {epochs_done}")
-
-        epochs_left -= epochs_now
-        if epochs_left <= 0:
-            break
+    train_loss_history, test_loss_history = AiManager.train(
+        model=net,
+        train_loader=train_loader,
+        test_loader=test_loader,
+        device=device,
+        epochs=epochs,
+        loss_fn=loss_fn,
+        optimizer=optimizer,
+        scheduler=scheduler,
+        early_stopping_patience=early_stopping_patience,
+        checkpoint_interval=save_interval,
+        model_save_name=model_save_name
+    )
 
     # 6. Plot loss over epochs
-    plt.figure()
+    plt.figure(figsize=(10, 6))
 
     # Train loss (every epoch)
-    epoch_axis = list(range(len(train_loss_history)))
-    plt.plot(epoch_axis, train_loss_history, label="Train Loss")
-    plt.plot(epoch_axis, test_loss_history, label="Test Loss")
+    epoch_axis = list(range(1, len(train_loss_history) + 1))
+    plt.plot(epoch_axis, train_loss_history, label="Train Loss", alpha=0.7)
+    plt.plot(epoch_axis, test_loss_history, label="Test Loss", alpha=0.7)
 
     plt.title('Loss over epochs: train and test')
     plt.xlabel('Epochs')
     plt.ylabel('Loss (MSE)')
     plt.legend()
-    plt.grid(True)
+    plt.grid(True, alpha=0.3)
+    plt.tight_layout()
     plt.show()
+    
+    print(f"\nTraining complete!")
+    print(f"Final Train Loss: {train_loss_history[-1]:.6f}")
+    print(f"Final Test Loss: {test_loss_history[-1]:.6f}")
 
 def main():
     """
@@ -213,7 +219,7 @@ def main():
         - "TRAIN": Train neural network on existing database
     """
 
-    operation_mode = "CREATE_DATABASE"  # Options: "GUI", "CREATE_DATABASE", "TRAIN"
+    operation_mode = "TRAIN"  # Options: "GUI", "CREATE_DATABASE", "TRAIN"
 
     if operation_mode == "GUI":
         run_gui()
@@ -228,12 +234,13 @@ def main():
     elif operation_mode == "TRAIN":
         train_neural_network(
             database_filename="board_database_100_000_games_heuristic.json",
-            epochs=400,
+            epochs=20,
             batch_size=64,
             learning_rate=0.01,
             train_split=0.7,
             model_save_name="hex_model_v2",
-            save_interval=40,
+            early_stopping_patience=30,
+            save_interval=40
         )
 
     else:
