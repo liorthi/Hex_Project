@@ -39,16 +39,14 @@ class Tournament:
 
         Args:
             board_states: List of board state numpy arrays
-            winner: 'RED', 'BLUE', or 'TIE'
+            winner: 'RED', 'BLUE'
             gamma: Discount factor (default 0.9)
 
         Returns:
             dict: {board_key: score} for each board state
         """
         # Determine outcome
-        if winner == 'TIE':
-            outcome = 0.1
-        elif winner == 'RED':
+        if winner == 'RED':
             outcome = 0.0
         else:  # BLUE wins
             outcome = 1.0
@@ -78,8 +76,7 @@ class Tournament:
         results = []
         winners = {
             'RED': 0,
-            'BLUE': 0,
-            'Tie': 0
+            'BLUE': 0
         }
 
         game = Game(self.board_size, self.players[RED], self.players[BLUE])

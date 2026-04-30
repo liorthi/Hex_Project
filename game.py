@@ -63,14 +63,6 @@ class Game:
                     self.winner = self.current
                 return self._create_result()
 
-            # Check for tie (board full)
-            if self.board.is_full():
-                if verbose:
-                    print(self.board)
-                    print("Tie!")
-
-                return self._create_result()
-
             # Switch player
             self.switch_player()
 
@@ -85,8 +77,7 @@ class Game:
 
     def _create_result(self):
         """Create a game result dictionary"""
-        winner = 'RED' if self.current == RED else \
-            ('BLUE' if self.current == BLUE else 'Tie')
+        winner = 'RED' if self.current == RED else 'BLUE'
 
         return {
             'winner': winner,

@@ -66,7 +66,7 @@ def create_database(num_games=1000, database_path="board_database_100_000_games_
         save_games: If true, save the game database
     """
     red = RandomAI()
-    blue = NeuralAI("hex_model_epoch_350.pth", BLUE)
+    blue = RandomAI()
     #blue = GreedyAI(database_path, BLUE)
 
     tournament = Tournament(
@@ -203,67 +203,6 @@ def train_neural_network(database_filename="board_database_100_000_games_heurist
     plt.grid(True)
     plt.show()
 
-def evaluate_checkpoints(
-        database_filename="board_database_100_000_games_heuristic.json",
-        batch_size=64,
-        train_split=0.7):
-    """
-    Evaluate a neural network on the board database
-    Args:
-        database_filename: JSON file containing board states and scores
-        batch_size: Batch size for training
-        train_split: Fraction of data to use for training (rest for testing)
-    """
-
-    # 0. Device
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-    # 1. Load data with the same seed — identical split every time
-    X, Y = DatabaseHandler.load_board_database_encoded(database_filename)
-    dataset = TensorDataset(X, Y)
-
-    train_size = int(len(dataset) * train_split)
-    test_size = len(dataset) - train_size
-
-    generator = torch.Generator()
-    generator.manual_seed(42)  # same seed as training
-
-    _, test_dataset = random_split(dataset, [train_size, test_size], generator=generator)
-    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
-
-    # 2. Find all checkpoint files
-    checkpoints = sorted(glob.glob("hex_model_epoch_*.pth"))
-    print(f"Found {len(checkpoints)} checkpoints\n")
-
-    # 3. Evaluate each one
-    results = []
-    for path in checkpoints:
-        net = HexNet().to(device)
-        net.load_state_dict(torch.load(path, map_location=device))
-
-        test_loss = AiManager.evaluate(net, test_loader, device)
-        results.append((path, test_loss))
-        print(f"{path:35s} | Test Loss: {test_loss:.5f}")
-
-    # 4. Print the winner
-    best_path, best_loss = min(results, key=lambda x: x[1])
-    print(f"\nBest model: {best_path} with test loss {best_loss:.5f}")
-
-    # 5. Plot
-    epochs = [int(p.split("_epoch_")[1].replace(".pth", "")) for p, _ in results]
-    losses = [loss for _, loss in results]
-
-    plt.figure()
-    plt.plot(epochs, losses, marker='o', label="Test Loss")
-    plt.title("Test Loss per Checkpoint")
-    plt.xlabel("Epoch")
-    plt.ylabel("Loss (MSE)")
-    plt.legend()
-    plt.grid(True)
-    plt.show()
-
-    return best_path
-
 def main():
     """
     Main entry point - configure operation mode here
@@ -272,17 +211,16 @@ def main():
         - "GUI": Run the graphical user interface
         - "CREATE_DATABASE": Generate board database from games
         - "TRAIN": Train neural network on existing database
-        - "INFERENCE": Run prediction on a single board state
     """
 
-    operation_mode = "GUI"  # Options: "GUI", "CREATE_DATABASE", "TRAIN", "EVALUATE_CHECKPOINTS"
+    operation_mode = "CREATE_DATABASE"  # Options: "GUI", "CREATE_DATABASE", "TRAIN"
 
     if operation_mode == "GUI":
         run_gui()
 
     elif operation_mode == "CREATE_DATABASE":
         create_database(
-            num_games=1000,
+            num_games=100,
             database_path="board_database_100_000_games_heuristic.json",
             save_games=False
         )
@@ -296,13 +234,6 @@ def main():
             train_split=0.7,
             model_save_name="hex_model_v2",
             save_interval=40,
-        )
-
-    elif operation_mode == "EVALUATE_CHECKPOINTS":
-        evaluate_checkpoints(
-            database_filename="board_database_100_000_games_heuristic.json",
-            batch_size = 64,
-            train_split = 0.7
         )
 
     else:

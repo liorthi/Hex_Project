@@ -144,10 +144,7 @@ class HexWidget(QWidget):
         msg = QMessageBox(self)
         msg.setWindowTitle("Game Over")
 
-        if winner == "TIE":
-            msg.setText("It's a tie!")
-        else:
-            msg.setText(f"{winner} wins!")
+        msg.setText(f"{winner} wins!")
 
         msg.setIcon(QMessageBox.Information)
         msg.setStandardButtons(QMessageBox.Ok | QMessageBox.Reset)

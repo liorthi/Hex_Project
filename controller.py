@@ -80,12 +80,6 @@ class GameController(QObject):
         if self._check_win():
             return True
         
-        # Check for tie (board full)
-        if self.board.is_full():
-            self.game_active = False
-            self.game_over.emit("TIE")
-            return True
-        
         # Switch turn
         self._switch_turn()
         

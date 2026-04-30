@@ -29,7 +29,6 @@ class DatabaseHandler:
                 'board_size': results[0]['board_size'] if results else None,
                 'red_wins': sum(1 for r in results if r['winner'] == 'RED'),
                 'blue_wins': sum(1 for r in results if r['winner'] == 'BLUE'),
-                'ties': sum(1 for r in results if r['winner'] == 'TIE'),
             },
             'games': results
         }
@@ -40,7 +39,6 @@ class DatabaseHandler:
         print(f"Saved {len(results)} games to {filepath}")
         print(f"RED wins: {data['metadata']['red_wins']}")
         print(f"BLUE wins: {data['metadata']['blue_wins']}")
-        print(f"Ties: {data['metadata']['ties']}")
 
         return str(filepath)
 
