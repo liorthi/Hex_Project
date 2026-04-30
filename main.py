@@ -56,37 +56,43 @@ def run_gui(database_path="board_database_100_000_games_heuristic.json"):
     sys.exit(app.exec())
 
 
-def create_database(num_games=1000, database_path="board_database_100_000_games_heuristic.json", save_games=True):
+def create_database(num_games=1000,
+                     red_player=RandomAI(),
+                     blue_player=RandomAI(),
+                     save_games=True,
+                     perspective=RED):
     """
     Create a board database by running multiple games
 
     Args:
-        num_games: Number of games to run
-        database_path: Path to load existing database (for GreedyAI)
-        save_games: If true, save the game database
+        num_games: Number of games to simulate
+        red_player: Player object for RED
+        blue_player: Player object for BLUE
+        save_games: Whether to save the game results to JSON (optional)
+        perspective: Which player's perspective to save scores from (RED or BLUE)
     """
-    red = RandomAI()
-    blue = RandomAI()
-    #blue = GreedyAI(database_path, BLUE)
 
     tournament = Tournament(
         num_games=num_games,
         board_size=7,
-        red_player_class=red,
-        blue_player_class=blue,
+        red_player_class=red_player,
+        blue_player_class=blue_player,
         gamma=0.9
     )
 
     print(f"Running {num_games} games...")
-    results, board_database, winners = tournament.run_multiple_games(verbose=False)
+    results, board_database, winners = tournament.run_multiple_games(verbose=False, perspective=perspective)
 
     print(f"Winners: {winners}")
 
     # Save the board database (main output)
     if save_games:
+        red_player_name = red_player.__class__.__name__.replace("AI", "").lower()
+        blue_player_name = blue_player.__class__.__name__.replace("AI", "").lower()
+
         DatabaseHandler.save_board_database(
             board_database,
-            filename=f"board_database_{num_games}_games_heuristic.json"
+            filename=f"{red_player_name}_VS_{blue_player_name}_perspective_{'RED' if perspective == RED else 'BLUE'}.json"
         )
 
     # Print some statistics
@@ -104,7 +110,7 @@ def create_database(num_games=1000, database_path="board_database_100_000_games_
         print(f"  Times seen: {count}")
 
 
-def train_neural_network(database_filename="board_database_100_000_games_heuristic.json",
+def train_neural_network(database_filename="board_database_250_000_games_heuristic.json",
                          epochs=50,
                          batch_size=64,
                          learning_rate=0.001,
@@ -165,7 +171,7 @@ def train_neural_network(database_filename="board_database_100_000_games_heurist
         mode='min',           # We want to minimize the loss
         factor=0.5,           # Reduce LR by half when plateau detected
         patience=10,          # Wait 10 epochs before reducing
-        min_lr=1e-6          # Don't go below this learning rate
+        min_lr=1e-9          # Don't go below this learning rate
     )
 
     train_loss_history = []
@@ -219,21 +225,23 @@ def main():
         - "TRAIN": Train neural network on existing database
     """
 
-    operation_mode = "TRAIN"  # Options: "GUI", "CREATE_DATABASE", "TRAIN"
+    operation_mode = "CREATE_DATABASE"  # Options: "GUI", "CREATE_DATABASE", "TRAIN"
 
-    if operation_mode == "GUI":
+    if operation_mode == "create_database":
         run_gui()
 
     elif operation_mode == "CREATE_DATABASE":
         create_database(
-            num_games=100,
-            database_path="board_database_100_000_games_heuristic.json",
-            save_games=False
+            num_games=250_000,
+            red_player=RandomAI(),
+            blue_player=RandomAI(),
+            save_games=True,
+            perspective=BLUE
         )
 
     elif operation_mode == "TRAIN":
         train_neural_network(
-            database_filename="board_database_100_000_games_heuristic.json",
+            database_filename="board_database_250_000_games_heuristic.json",
             epochs=20,
             batch_size=64,
             learning_rate=0.01,

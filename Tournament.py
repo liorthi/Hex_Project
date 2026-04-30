@@ -33,7 +33,7 @@ class Tournament:
         return str(board_array.flatten().tolist())
 
     @staticmethod
-    def calculate_board_scores(board_states, winner, gamma=0.9):
+    def calculate_board_scores(board_states, winner, gamma=0.9, perspective=RED):
         """
         Calculate scores for all board states in a game
 
@@ -41,15 +41,16 @@ class Tournament:
             board_states: List of board state numpy arrays
             winner: 'RED', 'BLUE'
             gamma: Discount factor (default 0.9)
+            perspective: The perspective (RED or BLUE) to save scores from
 
         Returns:
             dict: {board_key: score} for each board state
         """
         # Determine outcome
-        if winner == 'RED':
-            outcome = 0.0
-        else:  # BLUE wins
+        if winner == perspective:
             outcome = 1.0
+        else: 
+            outcome = 0.0
 
         N = len(board_states)
         board_scores = {}
@@ -63,12 +64,13 @@ class Tournament:
         return board_scores
 
 
-    def run_multiple_games(self, verbose=False):
+    def run_multiple_games(self, verbose=False, perspective=RED):
         """
         Run multiple games and collect results
 
         Args:
             verbose: Print game progress
+            perspective: The perspective (RED or BLUE) to save the database for
 
         Returns:
             tuple: (results list, board_database dict, winners dict)
@@ -82,9 +84,6 @@ class Tournament:
         game = Game(self.board_size, self.players[RED], self.players[BLUE])
 
         for i in range(self.num_games):
-            if verbose or (i + 1) % 10_000 == 0:
-                print(f"Playing game {i + 1}/{self.num_games}...")
-
             # Play game
             game.reset_game()
             result = game.play(verbose=verbose and i == 1)  # print only the first game
@@ -95,7 +94,8 @@ class Tournament:
             board_scores = Tournament.calculate_board_scores(
                 result['board_states'],
                 result['winner'],
-                self.gamma
+                self.gamma,
+                perspective
             )
 
             # Update board database with dynamic averaging
