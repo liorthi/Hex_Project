@@ -17,22 +17,14 @@ import glob # for finding file names
 
 # OPERATION MODES
 
-def run_gui(database_path="board_database_100_000_games_heuristic.json"):
+def run_gui(red_player=RandomAI(), blue_player=RandomAI()):
     """
     Run the GUI application
 
     Args:
-        database_path: Path to the board database file
+        red_player: Player object for RED (default: RandomAI)
+        blue_player: Player object for BLUE (default: RandomAI)
     """
-
-    # Setup players
-    red_player = HumanPlayer()
-    #red_player = HeuristicAI(database_path, RED)
-
-    blue_player = NeuralAI("hex_model_v2_epoch_40.pth", BLUE)
-    #blue_player = HeuristicAI(database_path, BLUE)
-    #blue_player = GreedyAI(database_path, BLUE)
-
     # Create Qt application
     app = QApplication(sys.argv)
 
@@ -227,16 +219,19 @@ def main():
 
     operation_mode = "CREATE_DATABASE"  # Options: "GUI", "CREATE_DATABASE", "TRAIN"
 
-    if operation_mode == "create_database":
-        run_gui()
+    if operation_mode == "GUI":
+        run_gui(
+            red_player=HumanPlayer(),
+            blue_player=HeuristicAI("random_VS_random_perspective_BLUE.json", BLUE)
+        )
 
     elif operation_mode == "CREATE_DATABASE":
         create_database(
-            num_games=250_000,
-            red_player=RandomAI(),
-            blue_player=RandomAI(),
-            save_games=True,
-            perspective=BLUE
+            num_games=100,
+            red_player=HeuristicAI("random_VS_random_perspective_RED.json", RED),
+            blue_player=HeuristicAI("random_VS_random_perspective_BLUE.json", BLUE),
+            save_games=False,
+            perspective=RED
         )
 
     elif operation_mode == "TRAIN":

@@ -27,7 +27,7 @@ class RandomAI(Player):
 
 
 class GreedyAI(Player):
-    def __init__(self, database_path, color, gama=0.9):
+    def __init__(self, database_path, color, gama=0.1):
         """
         :param database: <flattened_board> : (score, num_of_occurrences)
         """
@@ -36,8 +36,8 @@ class GreedyAI(Player):
         self.gama = gama
 
     def get_move(self, board):
-        best_score = None
-        best_move = None
+        best_score = float('-inf')
+        best_moves = []
 
         for r, c in board.empty_cells():
             # Create board copy
@@ -57,18 +57,20 @@ class GreedyAI(Player):
             else:
                 score = 0.5
 
+            # Adjust score based on perspective
+            if self.color == BLUE:
+                    score = 1.0 - score
+
             # Greedy choice
-            if best_move is None:
+            if score > best_score:
                 best_score = score
-                best_move = (r, c)
-            else:
-                if score > best_score:
-                    best_score = score
-                    best_move = (r, c)
+                best_moves = [(r, c)]
+            elif score == best_score:
+                best_moves.append((r, c))
 
         # return the best move 90% of the time
         if random.random() < self.gama:
-            return best_move
+            return random.choice(best_moves)
         return random.choice(board.empty_cells())
 
 
