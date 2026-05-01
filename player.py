@@ -48,18 +48,15 @@ class GreedyAI(Player):
             temp.place(r, c, self.color)
 
             # Lookup board score
-            key = str(temp.grid.flatten().tolist())
+            norm_grid = temp.make_red_perspective_and_normalize(self.color)
+            key = str(norm_grid.flatten().tolist())
 
             if key in self.database:
                 score, _ = self.database[key]
 
             #if unknown
             else:
-                score = 0.5
-
-            # Adjust score based on perspective
-            if self.color == BLUE:
-                score = -score
+                score = 0.0 + random.uniform(-0.05, 0.05)
 
             # Greedy choice
             if score > best_score:
@@ -276,10 +273,14 @@ class NeuralAI(Player):
             # Apply move
             temp.place(r, c, self.color)
 
-            board_str = str(temp.grid.flatten().tolist())[1:-1].replace(",", "").replace(" ", "")
+            norm_board = temp.make_red_perspective_and_normalize(self.color).flatten()
 
             # Lookup board score
-            score = DatabaseHandler.predict_score(self.model, board_str, self.device)
+            score = DatabaseHandler.predict_score(self.model, norm_board, self.device)
+
+            if self.color == BLUE:
+                score = -score  # Invert score for BLUE perspective
+
 
             if score > best_score:
                 best_score = score

@@ -5,6 +5,52 @@ from PySide6.QtCore import Qt, QPointF, QTimer
 
 from board import RED, BLUE, EMPTY
 
+class WelcomeWidget(QWidget):
+    def __init__(self, on_start):
+        super().__init__()
+        self.on_start = on_start
+        self.setWindowTitle("Hex")
+        self.setMinimumSize(700, 700)
+        self._build_ui()
+
+    def _build_ui(self):
+        from PySide6.QtWidgets import QVBoxLayout, QPushButton, QLabel
+
+        layout = QVBoxLayout()
+        layout.setAlignment(Qt.AlignCenter)
+
+        title = QLabel("HEX AI")
+        title.setAlignment(Qt.AlignCenter)
+        title.setStyleSheet("font-size: 64px; font-weight: bold; letter-spacing: 8px;")
+
+        subtitle = QLabel("made by - Lior Kuznets")
+        subtitle.setAlignment(Qt.AlignCenter)
+        subtitle.setStyleSheet("font-size: 18px; color: gray; margin-bottom: 60px;")
+
+        btn = QPushButton("Play Against AI")
+        btn.setFixedSize(160, 50)
+        btn.setStyleSheet("""
+            QPushButton {
+                font-size: 18px;
+                background-color: #222;
+                color: white;
+                border-radius: 8px;
+            }
+            QPushButton:hover {
+                background-color: #444;
+            }
+        """)
+        btn.clicked.connect(self._start)
+
+        layout.addWidget(title)
+        layout.addWidget(subtitle)
+        layout.addWidget(btn, alignment=Qt.AlignCenter)
+        self.setLayout(layout)
+
+    def _start(self):
+        self.on_start()
+        self.close()
+
 
 class HexWidget(QWidget):
     """

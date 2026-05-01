@@ -39,6 +39,9 @@ class AiManager:
                 y_pred = model(batch_X)
                 loss = loss_fn(y_pred, batch_Y)
                 loss.backward()
+
+                torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0) # Gradient clipping to prevent exploding gradients
+
                 optimizer.step()
 
                 total_train_loss += loss.item()
@@ -121,8 +124,8 @@ class AiManager:
 class HexNet(nn.Module):
     def __init__(self):
         super().__init__()
-        self.layer1 = nn.Linear(7*7*3, 180)
-        self.layer2 = nn.Linear(180, 64)
+        self.layer1 = nn.Linear(7*7, 128)
+        self.layer2 = nn.Linear(128, 64)
         self.output = nn.Linear(64, 1)
 
         self.leaky_relu = nn.LeakyReLU(negative_slope=0.01)

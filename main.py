@@ -1,7 +1,7 @@
 import sys
 from PySide6.QtWidgets import QApplication
 from controller import GameController
-from ui import HexWidget
+from ui import HexWidget, WelcomeWidget
 from player import RandomAI, HumanPlayer, GreedyAI, HeuristicAI, NeuralAI
 from board import RED, BLUE
 from DatabaseHandler import DatabaseHandler
@@ -19,33 +19,23 @@ import glob # for finding file names
 # OPERATION MODES
 
 def run_gui(red_player=RandomAI(), blue_player=RandomAI()):
-    """
-    Run the GUI application
-
-    Args:
-        red_player: Player object for RED (default: RandomAI)
-        blue_player: Player object for BLUE (default: RandomAI)
-    """
-    # Create Qt application
     app = QApplication(sys.argv)
 
-    # Create controller (Model + Controller)
     controller = GameController(
         board_size=7,
         red_player=red_player,
         blue_player=blue_player
     )
 
-    # Create UI (View)
     ui = HexWidget(controller)
-
-    # Connect controller to UI
     controller.set_ui(ui)
 
-    # Show UI
-    ui.show()
+    def launch_game():
+        ui.show()
 
-    # Run application
+    welcome = WelcomeWidget(on_start=launch_game)
+    welcome.show()
+
     sys.exit(app.exec())
 
 
@@ -68,7 +58,7 @@ def create_database(num_games=1000,
         board_size=7,
         red_player_class=red_player,
         blue_player_class=blue_player,
-        gamma=0.99
+        gamma=0.95
     )
 
     print(f"Running {num_games} games...")
@@ -90,13 +80,6 @@ def create_database(num_games=1000,
     avg_moves = sum(r['total_moves'] for r in results) / len(results)
     print(f"\nAverage game length: {avg_moves:.1f} moves")
     print(f"Unique board states: {len(board_database)}")
-
-    pos = [v[0] for v in board_database.values() if v[0] > 0]
-    neg = [v[0] for v in board_database.values() if v[0] < 0]
-
-    print("Positive avg:", sum(pos)/len(pos))
-    print("Negative avg:", sum(neg)/len(neg))
-    print("Count +:", len(pos), "Count -:", len(neg))
 
     # Show example of a board state entry
     if board_database:
@@ -197,17 +180,10 @@ def train_neural_network(database_filename="heuristic_VS_heuristic_perspective_B
     # 6. Plot loss over epochs
     plt.figure(figsize=(10, 6))
 
-    # make sure to avoid log(0) by adding a small epsilon
-    epsilon = 1e-12
-    train_loss_history = [max(l, epsilon) for l in train_loss_history]
-    test_loss_history = [max(l, epsilon) for l in test_loss_history]
-
     # Train loss (every epoch)
     epoch_axis = list(range(1, len(train_loss_history) + 1))
     plt.plot(epoch_axis, train_loss_history, label="Train Loss", alpha=0.7)
     plt.plot(epoch_axis, test_loss_history, label="Test Loss", alpha=0.7)
-
-    plt.yscale('log') # Log scale for better visibility of loss changes
 
     plt.title('Loss over epochs: train and test')
     plt.xlabel('Epochs')
@@ -231,32 +207,32 @@ def main():
         - "TRAIN": Train neural network on existing database
     """
 
-    operation_mode = "CREATE_DATABASE"  # Options: "GUI", "CREATE_DATABASE", "TRAIN"
+    operation_mode = "GUI"  # Options: "GUI", "CREATE_DATABASE", "TRAIN"
 
     if operation_mode == "GUI":
         run_gui(
-            red_player=HumanPlayer(),
-            blue_player=NeuralAI("hex_model_v3.pth", BLUE)
+            red_player=NeuralAI("hex_model_v3_epoch_180.pth", RED), 
+            blue_player=HumanPlayer()
         )
 
     elif operation_mode == "CREATE_DATABASE":
         create_database(
-            num_games=1000,
-            red_player=RandomAI(),
-            blue_player=RandomAI(),
-            save_games=True
+            num_games=100,
+            red_player=NeuralAI("hex_model_v3_epoch_180.pth", RED),
+            blue_player=GreedyAI("RED_heuristic_VS_BLUE_heuristic_100000.json", BLUE),
+            save_games=False
         )
 
     elif operation_mode == "TRAIN":
         train_neural_network(
-            database_filename="heuristic_VS_heuristic_perspective_BLUE.json",
-            epochs=10,
+            database_filename="RED_heuristic_VS_BLUE_heuristic_100000.json",
+            epochs=400,
             batch_size=64,
-            learning_rate=0.01,
+            learning_rate=0.001,
             train_split=0.7,
             model_save_name="hex_model_v3",
             early_stopping_patience=15,
-            save_interval=10
+            save_interval=15
         )
 
     else:

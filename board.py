@@ -48,6 +48,34 @@ class Board:
     def empty_cells(self):
         return list(zip(*np.where(self.grid == EMPTY)))
 
+    def make_red_perspective_and_normalize(self, player_color):
+        """
+        Returns board in RED perspective and normalized to [-1, 1]:
+
+        +1 → RED
+        -1 → BLUE
+        0 → EMPTY
+        """
+
+        grid = self.grid
+
+        # --- Step 1: convert to RED perspective safely ---
+        if player_color == RED:
+            perspective_grid = grid
+        else:
+            perspective_grid = grid.copy()
+            temp = grid  # reference original
+
+            perspective_grid[temp == RED] = BLUE
+            perspective_grid[temp == BLUE] = RED
+
+        # --- Step 2: normalize ---
+        norm_grid = np.zeros_like(perspective_grid, dtype=np.float32)
+        norm_grid[perspective_grid == RED] = 1.0
+        norm_grid[perspective_grid == BLUE] = -1.0
+
+        return norm_grid
+
     def __str__(self):
         symbols = {EMPTY: ".", RED: "R", BLUE: "B"}
         lines = []

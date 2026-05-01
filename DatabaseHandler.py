@@ -1,6 +1,8 @@
 import json
 from pathlib import Path
+from board import RED, BLUE
 import torch
+import numpy as np
 
 class DatabaseHandler:
     @staticmethod
@@ -95,77 +97,81 @@ class DatabaseHandler:
     @staticmethod
     def load_board_database_encoded(filename):
         """
-        Load a board database from game_database/<filename> and one-hot encodes it
-
-        Args:
-            filename: Name of the JSON file (e.g. "Hex_database_games.json")
+        Load board database and convert to normalized tensor format.
 
         Returns:
-            (tensor: X_list, tensor: Y_list)
+            X: (N, board_size^2) tensor with values in [-1, 0, 1]
+            Y: (N, 1) tensor with values in [-1, 1]
         """
+
         raw_data = DatabaseHandler.load_board_database(filename)
 
         X_list = []
         Y_list = []
 
-        for board_str, values in raw_data.items():
-            # Clean: "[001...]" -> "001..."
-            clean_board = board_str[1:-1]
-            clean_board = clean_board.replace(",", "").replace(" ", "")
+        for board_str, (score, count) in raw_data.items():
+            # --- Convert string to numpy array ---
+            # "[0, 1, 2, ...]" → list[int]
+            board_list = list(map(int, board_str.strip('[]').split(',')))
 
-            # Encode: 0 -> [1,0,0], 1 -> [0,1,0], 2 -> [0,0,1]
-            board_vector = DatabaseHandler.encode_single_board(clean_board)
+            size = int(len(board_list) ** 0.5)
+            grid = np.array(board_list, dtype=np.int8).reshape(size, size)
 
-            X_list.append(board_vector)
-            Y_list.append([values[0]])
+            # --- Normalize to [-1, 1] ---
+            norm_grid = np.zeros_like(grid, dtype=np.float32)
+            norm_grid[grid == RED] = 1.0
+            norm_grid[grid == BLUE] = -1.0
+            # empty stays 0
 
-        return torch.tensor(X_list), torch.tensor(Y_list)
+            # --- Flatten ---
+            X_list.append(norm_grid.flatten())
 
-    @staticmethod
-    def encode_single_board(board_str):
-        """
-        One-hot encode a single board string.
+            # --- Target ---
+            Y_list.append([float(score)])
 
-        Args:
-            board_str: String representation of board (e.g., "[0,0,1,2,...]")
+        X = torch.tensor(X_list, dtype=torch.float32)
+        Y = torch.tensor(Y_list, dtype=torch.float32)
 
-        Returns:
-            list: One-hot encoded board vector
-        """
-        # Encode: 0 -> [1,0,0], 1 -> [0,1,0], 2 -> [0,0,1]
-        board_vector = []
-        for char in board_str:
-            val = int(char)
-            one_hot = [0.0, 0.0, 0.0]
-            one_hot[val] = 1.0
-            board_vector.extend(one_hot)
-
-        return board_vector
+        return X, Y
 
     @staticmethod
-    def predict_score(model, board_str, device):
+    def encode_single_board(board):
         """
-        Takes a trained model and a board string, and outputs the predicted score.
+        Convert board to normalized flat vector in [-1, 0, 1]
 
         Args:
-            model: Trained neural network model
-            board_str: String representation of board
-            device: Device to run prediction on
+            board: array([1., ...]) or list of length board_size^2
 
         Returns:
-            float: Predicted score
+            list[float]: flattened normalized board
         """
-        # 1. Encode the board using our helper function
-        board_vector = DatabaseHandler.encode_single_board(board_str)
 
-        # 2. Convert to tensor and add a "batch" dimension (shape becomes [1, 147])
-        x_tensor = torch.tensor([board_vector]).to(device)
+        # Convert to numpy array
+        grid = np.array(board, dtype=np.int8)
 
-        # 3. Make the prediction without calculating gradients
+        # Normalize
+        norm = np.zeros_like(grid, dtype=np.float32)
+        norm[grid == RED] = 1.0
+        norm[grid == BLUE] = -1.0
+        # empty stays 0
+
+        return norm.tolist()
+
+    @staticmethod
+    def predict_score(model, board, device):
+        """
+        Predict score for a given board.
+
+        Returns:
+            float
+        """
+        board_vector = DatabaseHandler.encode_single_board(board)
+
+        x_tensor = torch.tensor(board_vector, dtype=torch.float32, device=device).unsqueeze(0)
+
         with torch.no_grad():
             prediction = model(x_tensor)
 
-        # 4. Extract the single float value from the resulting tensor
         return prediction.item()
 
     @staticmethod
