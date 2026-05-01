@@ -1,0 +1,318 @@
+<mxfile host="app.diagrams.net" modified="2026-05-01T00:00:00.000Z" agent="Claude" version="21.0.0" type="device">
+  <diagram id="hex-uml" name="Hex Project UML">
+    <mxGraphModel dx="1422" dy="762" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1654" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- ===================== BOARD ===================== -->
+        <mxCell id="board" value="Board" style="swimlane;startSize=30;fontStyle=1;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="20" y="20" width="260" height="230" as="geometry" />
+        </mxCell>
+        <mxCell id="board_attrs" value="- size: int&#xa;- grid: np.ndarray (size×size, int8)" style="text;align=left;verticalAlign=top;spacingLeft=4;" vertex="1" parent="board">
+          <mxGeometry x="0" y="30" width="260" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="board_sep1" value="" style="line;strokeColor=#000000;" vertex="1" parent="board">
+          <mxGeometry x="0" y="80" width="260" height="10" as="geometry" />
+        </mxCell>
+        <mxCell id="board_methods" value="+ place(r, c, player)&#xa;+ in_bounds(r, c): bool&#xa;+ neighbors(r, c): generator&#xa;+ empty_cells(): list&#xa;+ is_full(): bool&#xa;+ red_wins(): bool&#xa;+ blue_wins(): bool&#xa;+ red_distances(): tuple&#xa;+ blue_distances(): tuple&#xa;+ make_red_perspective_and_normalize(color): ndarray&#xa;- _bfs_edge(edge_index, color, vertical): dict" style="text;align=left;verticalAlign=top;spacingLeft=4;" vertex="1" parent="board">
+          <mxGeometry x="0" y="90" width="260" height="130" as="geometry" />
+        </mxCell>
+
+        <!-- ===================== GAME ===================== -->
+        <mxCell id="game" value="Game" style="swimlane;startSize=30;fontStyle=1;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="320" y="20" width="260" height="200" as="geometry" />
+        </mxCell>
+        <mxCell id="game_attrs" value="- board: Board&#xa;- players: dict {RED: Player, BLUE: Player}&#xa;- size: int&#xa;- current: int&#xa;- winner: int | None&#xa;- move_history: list&#xa;- board_states: list" style="text;align=left;verticalAlign=top;spacingLeft=4;" vertex="1" parent="game">
+          <mxGeometry x="0" y="30" width="260" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="game_sep" value="" style="line;strokeColor=#000000;" vertex="1" parent="game">
+          <mxGeometry x="0" y="110" width="260" height="10" as="geometry" />
+        </mxCell>
+        <mxCell id="game_methods" value="+ play(verbose): dict&#xa;+ reset_game()&#xa;+ switch_player()&#xa;- _create_result(): dict" style="text;align=left;verticalAlign=top;spacingLeft=4;" vertex="1" parent="game">
+          <mxGeometry x="0" y="120" width="260" height="70" as="geometry" />
+        </mxCell>
+
+        <!-- ===================== GAME CONTROLLER ===================== -->
+        <mxCell id="controller" value="GameController" style="swimlane;startSize=30;fontStyle=1;fontSize=13;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="620" y="20" width="280" height="270" as="geometry" />
+        </mxCell>
+        <mxCell id="ctrl_attrs" value="- board_size: int&#xa;- board: Board&#xa;- red_player: Player&#xa;- blue_player: Player&#xa;- ui: HexWidget | None&#xa;- current_turn: int&#xa;- game_active: bool&#xa;- move_history: list&#xa;[signal] board_updated: Signal()&#xa;[signal] game_over: Signal(str)" style="text;align=left;verticalAlign=top;spacingLeft=4;" vertex="1" parent="controller">
+          <mxGeometry x="0" y="30" width="280" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="ctrl_sep" value="" style="line;strokeColor=#000000;" vertex="1" parent="controller">
+          <mxGeometry x="0" y="140" width="280" height="10" as="geometry" />
+        </mxCell>
+        <mxCell id="ctrl_methods" value="+ set_ui(ui)&#xa;+ place_tile(row, col): bool&#xa;+ start_game()&#xa;+ reset_game()&#xa;+ is_human_turn(): bool&#xa;+ get_current_player(): Player&#xa;+ get_board_state(): ndarray&#xa;+ get_current_turn_color(): int&#xa;+ is_game_active(): bool&#xa;- _check_win(): bool&#xa;- _switch_turn()&#xa;- _make_ai_move()" style="text;align=left;verticalAlign=top;spacingLeft=4;" vertex="1" parent="controller">
+          <mxGeometry x="0" y="150" width="280" height="110" as="geometry" />
+        </mxCell>
+
+        <!-- ===================== HEX WIDGET (VIEW) ===================== -->
+        <mxCell id="hexwidget" value="HexWidget" style="swimlane;startSize=30;fontStyle=1;fontSize=13;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="940" y="20" width="260" height="220" as="geometry" />
+        </mxCell>
+        <mxCell id="hw_attrs" value="- controller: GameController&#xa;- size: int&#xa;- hex_radius: int (30)&#xa;- margin: int (100)" style="text;align=left;verticalAlign=top;spacingLeft=4;" vertex="1" parent="hexwidget">
+          <mxGeometry x="0" y="30" width="260" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="hw_sep" value="" style="line;strokeColor=#000000;" vertex="1" parent="hexwidget">
+          <mxGeometry x="0" y="90" width="260" height="10" as="geometry" />
+        </mxCell>
+        <mxCell id="hw_methods" value="+ paintEvent(event)&#xa;+ mousePressEvent(event)&#xa;+ update_display() [slot]&#xa;+ handle_game_over(winner) [slot]&#xa;+ hex_center(r, c): QPointF&#xa;+ hex_polygon(center): QPolygonF&#xa;+ draw_borders(painter)" style="text;align=left;verticalAlign=top;spacingLeft=4;" vertex="1" parent="hexwidget">
+          <mxGeometry x="0" y="100" width="260" height="110" as="geometry" />
+        </mxCell>
+
+        <!-- ===================== WELCOME WIDGET ===================== -->
+        <mxCell id="welcomewidget" value="WelcomeWidget" style="swimlane;startSize=30;fontStyle=1;fontSize=13;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="1240" y="20" width="240" height="130" as="geometry" />
+        </mxCell>
+        <mxCell id="ww_attrs" value="- on_start: callable" style="text;align=left;verticalAlign=top;spacingLeft=4;" vertex="1" parent="welcomewidget">
+          <mxGeometry x="0" y="30" width="240" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="ww_sep" value="" style="line;strokeColor=#000000;" vertex="1" parent="welcomewidget">
+          <mxGeometry x="0" y="60" width="240" height="10" as="geometry" />
+        </mxCell>
+        <mxCell id="ww_methods" value="- _build_ui()&#xa;- _start()" style="text;align=left;verticalAlign=top;spacingLeft=4;" vertex="1" parent="welcomewidget">
+          <mxGeometry x="0" y="70" width="240" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- ===================== PLAYER (abstract) ===================== -->
+        <mxCell id="player_base" value="«abstract»&#xa;Player" style="swimlane;startSize=30;fontStyle=3;fontSize=13;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="20" y="310" width="200" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="player_sep" value="" style="line;strokeColor=#000000;" vertex="1" parent="player_base">
+          <mxGeometry x="0" y="50" width="200" height="10" as="geometry" />
+        </mxCell>
+        <mxCell id="player_methods" value="+ get_move(board): tuple {abstract}" style="text;align=left;verticalAlign=top;spacingLeft=4;" vertex="1" parent="player_base">
+          <mxGeometry x="0" y="60" width="200" height="25" as="geometry" />
+        </mxCell>
+
+        <!-- HumanPlayer -->
+        <mxCell id="humanplayer" value="HumanPlayer" style="swimlane;startSize=30;fontStyle=1;fontSize=12;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="20" y="460" width="180" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="hp_sep" value="" style="line;strokeColor=#000000;" vertex="1" parent="humanplayer">
+          <mxGeometry x="0" y="40" width="180" height="10" as="geometry" />
+        </mxCell>
+        <mxCell id="hp_methods" value="+ get_move(board): tuple" style="text;align=left;verticalAlign=top;spacingLeft=4;" vertex="1" parent="humanplayer">
+          <mxGeometry x="0" y="50" width="180" height="18" as="geometry" />
+        </mxCell>
+
+        <!-- RandomAI -->
+        <mxCell id="randomai" value="RandomAI" style="swimlane;startSize=30;fontStyle=1;fontSize=12;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="220" y="460" width="180" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="ra_sep" value="" style="line;strokeColor=#000000;" vertex="1" parent="randomai">
+          <mxGeometry x="0" y="40" width="180" height="10" as="geometry" />
+        </mxCell>
+        <mxCell id="ra_methods" value="+ get_move(board): tuple" style="text;align=left;verticalAlign=top;spacingLeft=4;" vertex="1" parent="randomai">
+          <mxGeometry x="0" y="50" width="180" height="18" as="geometry" />
+        </mxCell>
+
+        <!-- GreedyAI -->
+        <mxCell id="greedyai" value="GreedyAI" style="swimlane;startSize=30;fontStyle=1;fontSize=12;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="420" y="460" width="220" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="ga_attrs" value="- database: dict&#xa;- color: int&#xa;- gama: float" style="text;align=left;verticalAlign=top;spacingLeft=4;" vertex="1" parent="greedyai">
+          <mxGeometry x="0" y="30" width="220" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="ga_sep" value="" style="line;strokeColor=#000000;" vertex="1" parent="greedyai">
+          <mxGeometry x="0" y="80" width="220" height="10" as="geometry" />
+        </mxCell>
+        <mxCell id="ga_methods" value="+ get_move(board): tuple" style="text;align=left;verticalAlign=top;spacingLeft=4;" vertex="1" parent="greedyai">
+          <mxGeometry x="0" y="90" width="220" height="18" as="geometry" />
+        </mxCell>
+
+        <!-- HeuristicAI -->
+        <mxCell id="heuristicai" value="HeuristicAI" style="swimlane;startSize=30;fontStyle=1;fontSize=12;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="660" y="460" width="240" height="190" as="geometry" />
+        </mxCell>
+        <mxCell id="hai_attrs" value="- _greedy: GreedyAI&#xa;- color: int&#xa;- opponent: int&#xa;- gama: float" style="text;align=left;verticalAlign=top;spacingLeft=4;" vertex="1" parent="heuristicai">
+          <mxGeometry x="0" y="30" width="240" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="hai_sep" value="" style="line;strokeColor=#000000;" vertex="1" parent="heuristicai">
+          <mxGeometry x="0" y="90" width="240" height="10" as="geometry" />
+        </mxCell>
+        <mxCell id="hai_methods" value="+ get_move(board): tuple&#xa;- _apply_rules(board): tuple|None&#xa;- _find_winning_move(board, color): tuple|None&#xa;- _preblock(board, dist): tuple|None&#xa;- _is_bad_move(board, move): bool&#xa;- _correct_move(board): tuple|None" style="text;align=left;verticalAlign=top;spacingLeft=4;" vertex="1" parent="heuristicai">
+          <mxGeometry x="0" y="100" width="240" height="85" as="geometry" />
+        </mxCell>
+
+        <!-- NeuralAI -->
+        <mxCell id="neuralai" value="NeuralAI" style="swimlane;startSize=30;fontStyle=1;fontSize=12;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="920" y="460" width="220" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="na_attrs" value="- device: torch.device&#xa;- color: int&#xa;- model: HexNet" style="text;align=left;verticalAlign=top;spacingLeft=4;" vertex="1" parent="neuralai">
+          <mxGeometry x="0" y="30" width="220" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="na_sep" value="" style="line;strokeColor=#000000;" vertex="1" parent="neuralai">
+          <mxGeometry x="0" y="80" width="220" height="10" as="geometry" />
+        </mxCell>
+        <mxCell id="na_methods" value="+ get_move(board): tuple" style="text;align=left;verticalAlign=top;spacingLeft=4;" vertex="1" parent="neuralai">
+          <mxGeometry x="0" y="90" width="220" height="25" as="geometry" />
+        </mxCell>
+
+        <!-- ===================== TOURNAMENT ===================== -->
+        <mxCell id="tournament" value="Tournament" style="swimlane;startSize=30;fontStyle=1;fontSize=13;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="20" y="700" width="280" height="200" as="geometry" />
+        </mxCell>
+        <mxCell id="t_attrs" value="- num_games: int&#xa;- board_size: int&#xa;- gamma: float&#xa;- players: dict&#xa;- board_database: dict" style="text;align=left;verticalAlign=top;spacingLeft=4;" vertex="1" parent="tournament">
+          <mxGeometry x="0" y="30" width="280" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="t_sep" value="" style="line;strokeColor=#000000;" vertex="1" parent="tournament">
+          <mxGeometry x="0" y="100" width="280" height="10" as="geometry" />
+        </mxCell>
+        <mxCell id="t_methods" value="+ run_multiple_games(verbose): tuple&#xa;+ update_board_database(board_scores)&#xa;[static] board_to_key(board_array): str&#xa;[static] calculate_board_scores(states, winner, gamma): dict" style="text;align=left;verticalAlign=top;spacingLeft=4;" vertex="1" parent="tournament">
+          <mxGeometry x="0" y="110" width="280" height="80" as="geometry" />
+        </mxCell>
+
+        <!-- ===================== DATABASE HANDLER ===================== -->
+        <mxCell id="dbhandler" value="DatabaseHandler" style="swimlane;startSize=30;fontStyle=1;fontSize=13;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="340" y="700" width="300" height="200" as="geometry" />
+        </mxCell>
+        <mxCell id="db_attrs" value="(all static methods)" style="text;align=left;verticalAlign=top;spacingLeft=4;fontStyle=2;" vertex="1" parent="dbhandler">
+          <mxGeometry x="0" y="30" width="300" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="db_sep" value="" style="line;strokeColor=#000000;" vertex="1" parent="dbhandler">
+          <mxGeometry x="0" y="50" width="300" height="10" as="geometry" />
+        </mxCell>
+        <mxCell id="db_methods" value="[static] save_board_database(db, filename)&#xa;[static] load_board_database(filename): dict&#xa;[static] load_board_database_encoded(filename): (X,Y)&#xa;[static] save_games_to_json(results, filename)&#xa;[static] encode_single_board(board): list&#xa;[static] predict_score(model, board, device): float&#xa;[static] load_network(path, device, net): model" style="text;align=left;verticalAlign=top;spacingLeft=4;" vertex="1" parent="dbhandler">
+          <mxGeometry x="0" y="60" width="300" height="130" as="geometry" />
+        </mxCell>
+
+        <!-- ===================== AI MANAGER ===================== -->
+        <mxCell id="aimanager" value="AiManager" style="swimlane;startSize=30;fontStyle=1;fontSize=13;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="680" y="700" width="280" height="140" as="geometry" />
+        </mxCell>
+        <mxCell id="am_attrs" value="(all static methods)" style="text;align=left;verticalAlign=top;spacingLeft=4;fontStyle=2;" vertex="1" parent="aimanager">
+          <mxGeometry x="0" y="30" width="280" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="am_sep" value="" style="line;strokeColor=#000000;" vertex="1" parent="aimanager">
+          <mxGeometry x="0" y="50" width="280" height="10" as="geometry" />
+        </mxCell>
+        <mxCell id="am_methods" value="[static] train(model, train_loader, test_loader,&#xa;  device, epochs, loss_fn, optimizer,&#xa;  scheduler, early_stopping_patience,&#xa;  checkpoint_interval, model_save_name): tuple&#xa;[static] evaluate(model, loader, device): float" style="text;align=left;verticalAlign=top;spacingLeft=4;" vertex="1" parent="aimanager">
+          <mxGeometry x="0" y="60" width="280" height="70" as="geometry" />
+        </mxCell>
+
+        <!-- ===================== HEX NET ===================== -->
+        <mxCell id="hexnet" value="HexNet (nn.Module)" style="swimlane;startSize=30;fontStyle=1;fontSize=13;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="1000" y="700" width="260" height="160" as="geometry" />
+        </mxCell>
+        <mxCell id="hn_attrs" value="- layer1: Linear(49 → 128)&#xa;- layer2: Linear(128 → 64)&#xa;- output: Linear(64 → 1)&#xa;- leaky_relu: LeakyReLU(0.01)" style="text;align=left;verticalAlign=top;spacingLeft=4;" vertex="1" parent="hexnet">
+          <mxGeometry x="0" y="30" width="260" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="hn_sep" value="" style="line;strokeColor=#000000;" vertex="1" parent="hexnet">
+          <mxGeometry x="0" y="90" width="260" height="10" as="geometry" />
+        </mxCell>
+        <mxCell id="hn_methods" value="+ forward(x): Tensor&#xa;  (Linear→LeakyReLU→Linear→LeakyReLU&#xa;   →Linear→Sigmoid)" style="text;align=left;verticalAlign=top;spacingLeft=4;" vertex="1" parent="hexnet">
+          <mxGeometry x="0" y="100" width="260" height="55" as="geometry" />
+        </mxCell>
+
+        <!-- ===================== RELATIONSHIPS ===================== -->
+
+        <!-- Game uses Board (composition) -->
+        <mxCell id="e_game_board" style="edgeStyle=orthogonalEdgeStyle;endArrow=diamond;endFill=1;startArrow=none;" edge="1" source="game" target="board" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_game_board_lbl" value="uses" style="edgeLabel;fontSize=10;" vertex="1" connectable="0" parent="e_game_board">
+          <mxGeometry relative="0.5" as="geometry" />
+        </mxCell>
+
+        <!-- GameController uses Board (composition) -->
+        <mxCell id="e_ctrl_board" style="edgeStyle=orthogonalEdgeStyle;endArrow=diamond;endFill=0;startArrow=none;" edge="1" source="controller" target="board" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- GameController → HexWidget (dependency/owns) -->
+        <mxCell id="e_ctrl_hw" style="edgeStyle=orthogonalEdgeStyle;endArrow=open;endFill=0;" edge="1" source="controller" target="hexwidget" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ctrl_hw_lbl" value="signals→slots" style="edgeLabel;fontSize=10;" vertex="1" connectable="0" parent="e_ctrl_hw">
+          <mxGeometry relative="0.5" as="geometry" />
+        </mxCell>
+
+        <!-- HexWidget → GameController -->
+        <mxCell id="e_hw_ctrl" style="edgeStyle=orthogonalEdgeStyle;endArrow=open;endFill=0;dashed=1;" edge="1" source="hexwidget" target="controller" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_hw_ctrl_lbl" value="delegates to" style="edgeLabel;fontSize=10;" vertex="1" connectable="0" parent="e_hw_ctrl">
+          <mxGeometry relative="0.5" as="geometry" />
+        </mxCell>
+
+        <!-- Inheritance: HumanPlayer → Player -->
+        <mxCell id="e_hp_player" style="endArrow=block;endFill=0;exitX=0.5;exitY=0;edgeStyle=orthogonalEdgeStyle;" edge="1" source="humanplayer" target="player_base" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Inheritance: RandomAI → Player -->
+        <mxCell id="e_ra_player" style="endArrow=block;endFill=0;edgeStyle=orthogonalEdgeStyle;" edge="1" source="randomai" target="player_base" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Inheritance: GreedyAI → Player -->
+        <mxCell id="e_ga_player" style="endArrow=block;endFill=0;edgeStyle=orthogonalEdgeStyle;" edge="1" source="greedyai" target="player_base" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Inheritance: HeuristicAI → Player -->
+        <mxCell id="e_hai_player" style="endArrow=block;endFill=0;edgeStyle=orthogonalEdgeStyle;" edge="1" source="heuristicai" target="player_base" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Inheritance: NeuralAI → Player -->
+        <mxCell id="e_na_player" style="endArrow=block;endFill=0;edgeStyle=orthogonalEdgeStyle;" edge="1" source="neuralai" target="player_base" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- HeuristicAI uses GreedyAI (composition) -->
+        <mxCell id="e_hai_ga" style="endArrow=diamond;endFill=1;edgeStyle=orthogonalEdgeStyle;" edge="1" source="heuristicai" target="greedyai" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- NeuralAI uses HexNet -->
+        <mxCell id="e_na_hn" style="endArrow=diamond;endFill=1;edgeStyle=orthogonalEdgeStyle;" edge="1" source="neuralai" target="hexnet" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- GameController uses Players -->
+        <mxCell id="e_ctrl_player" style="endArrow=open;endFill=0;dashed=1;edgeStyle=orthogonalEdgeStyle;" edge="1" source="controller" target="player_base" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ctrl_player_lbl" value="uses" style="edgeLabel;fontSize=10;" vertex="1" connectable="0" parent="e_ctrl_player">
+          <mxGeometry relative="0.5" as="geometry" />
+        </mxCell>
+
+        <!-- Tournament uses Game -->
+        <mxCell id="e_t_game" style="endArrow=open;endFill=0;dashed=1;edgeStyle=orthogonalEdgeStyle;" edge="1" source="tournament" target="game" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_t_game_lbl" value="runs" style="edgeLabel;fontSize=10;" vertex="1" connectable="0" parent="e_t_game">
+          <mxGeometry relative="0.5" as="geometry" />
+        </mxCell>
+
+        <!-- Tournament uses DatabaseHandler -->
+        <mxCell id="e_t_db" style="endArrow=open;endFill=0;dashed=1;edgeStyle=orthogonalEdgeStyle;" edge="1" source="tournament" target="dbhandler" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_t_db_lbl" value="saves via" style="edgeLabel;fontSize=10;" vertex="1" connectable="0" parent="e_t_db">
+          <mxGeometry relative="0.5" as="geometry" />
+        </mxCell>
+
+        <!-- AiManager uses HexNet (trains) -->
+        <mxCell id="e_am_hn" style="endArrow=open;endFill=0;dashed=1;edgeStyle=orthogonalEdgeStyle;" edge="1" source="aimanager" target="hexnet" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_am_hn_lbl" value="trains" style="edgeLabel;fontSize=10;" vertex="1" connectable="0" parent="e_am_hn">
+          <mxGeometry relative="0.5" as="geometry" />
+        </mxCell>
+
+        <!-- DatabaseHandler loads HexNet -->
+        <mxCell id="e_db_hn" style="endArrow=open;endFill=0;dashed=1;edgeStyle=orthogonalEdgeStyle;" edge="1" source="dbhandler" target="hexnet" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_db_hn_lbl" value="loads" style="edgeLabel;fontSize=10;" vertex="1" connectable="0" parent="e_db_hn">
+          <mxGeometry relative="0.5" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
