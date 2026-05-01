@@ -67,9 +67,9 @@ class AiManager:
             current_lr = optimizer.param_groups[0]['lr']
 
             print(f"Epoch {epoch + 1}/{epochs} | "
-                  f"Train Loss: {avg_train_loss:.6f} | "
-                  f"Test Loss: {avg_test_loss:.6f} | "
-                  f"LR: {current_lr:.2e}")
+                  f"Train Loss: {avg_train_loss:.9e} | "
+                  f"Test Loss: {avg_test_loss:.9e} | "
+                  f"LR: {current_lr:.9e}", end='')
 
             # ===================== EARLY STOPPING =====================
             if avg_test_loss < best_test_loss:
@@ -79,6 +79,7 @@ class AiManager:
                 print(" New best model found")
             else:
                 epochs_without_improvement += 1
+                print()
 
             if epochs_without_improvement >= early_stopping_patience:
                 print(f"\nEarly stopping triggered at epoch {epoch + 1}")

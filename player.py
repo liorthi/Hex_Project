@@ -59,7 +59,7 @@ class GreedyAI(Player):
 
             # Adjust score based on perspective
             if self.color == BLUE:
-                    score = 1.0 - score
+                score = -score
 
             # Greedy choice
             if score > best_score:

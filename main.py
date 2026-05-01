@@ -7,6 +7,7 @@ from board import RED, BLUE
 from DatabaseHandler import DatabaseHandler
 from Tournament import Tournament
 from AiManager import AiManager, HexNet
+import numpy as np
 
 import torch
 import torch.nn as nn
@@ -51,8 +52,7 @@ def run_gui(red_player=RandomAI(), blue_player=RandomAI()):
 def create_database(num_games=1000,
                      red_player=RandomAI(),
                      blue_player=RandomAI(),
-                     save_games=True,
-                     perspective=RED):
+                     save_games=True,):
     """
     Create a board database by running multiple games
 
@@ -61,7 +61,6 @@ def create_database(num_games=1000,
         red_player: Player object for RED
         blue_player: Player object for BLUE
         save_games: Whether to save the game results to JSON (optional)
-        perspective: Which player's perspective to save scores from (RED or BLUE)
     """
 
     tournament = Tournament(
@@ -69,11 +68,11 @@ def create_database(num_games=1000,
         board_size=7,
         red_player_class=red_player,
         blue_player_class=blue_player,
-        gamma=0.9
+        gamma=0.99
     )
 
     print(f"Running {num_games} games...")
-    results, board_database, winners = tournament.run_multiple_games(verbose=False, perspective=perspective)
+    results, board_database, winners = tournament.run_multiple_games(verbose=False)
 
     print(f"Winners: {winners}")
 
@@ -84,13 +83,20 @@ def create_database(num_games=1000,
 
         DatabaseHandler.save_board_database(
             board_database,
-            filename=f"{red_player_name}_VS_{blue_player_name}_perspective_{'RED' if perspective == RED else 'BLUE'}.json"
+            filename=f"RED_{red_player_name}_VS_BLUE_{blue_player_name}_{num_games}.json"
         )
 
     # Print some statistics
     avg_moves = sum(r['total_moves'] for r in results) / len(results)
     print(f"\nAverage game length: {avg_moves:.1f} moves")
     print(f"Unique board states: {len(board_database)}")
+
+    pos = [v[0] for v in board_database.values() if v[0] > 0]
+    neg = [v[0] for v in board_database.values() if v[0] < 0]
+
+    print("Positive avg:", sum(pos)/len(pos))
+    print("Negative avg:", sum(neg)/len(neg))
+    print("Count +:", len(pos), "Count -:", len(neg))
 
     # Show example of a board state entry
     if board_database:
@@ -102,7 +108,7 @@ def create_database(num_games=1000,
         print(f"  Times seen: {count}")
 
 
-def train_neural_network(database_filename="board_database_250_000_games_heuristic.json",
+def train_neural_network(database_filename="heuristic_VS_heuristic_perspective_BLUE.json",
                          epochs=50,
                          batch_size=64,
                          learning_rate=0.001,
@@ -183,13 +189,25 @@ def train_neural_network(database_filename="board_database_250_000_games_heurist
         model_save_name=model_save_name
     )
 
+    y_values = Y.cpu().numpy()
+    print("Mean:", np.mean(y_values))
+    print("Min:", np.min(y_values))
+    print("Max:", np.max(y_values))
+
     # 6. Plot loss over epochs
     plt.figure(figsize=(10, 6))
+
+    # make sure to avoid log(0) by adding a small epsilon
+    epsilon = 1e-12
+    train_loss_history = [max(l, epsilon) for l in train_loss_history]
+    test_loss_history = [max(l, epsilon) for l in test_loss_history]
 
     # Train loss (every epoch)
     epoch_axis = list(range(1, len(train_loss_history) + 1))
     plt.plot(epoch_axis, train_loss_history, label="Train Loss", alpha=0.7)
     plt.plot(epoch_axis, test_loss_history, label="Test Loss", alpha=0.7)
+
+    plt.yscale('log') # Log scale for better visibility of loss changes
 
     plt.title('Loss over epochs: train and test')
     plt.xlabel('Epochs')
@@ -213,33 +231,32 @@ def main():
         - "TRAIN": Train neural network on existing database
     """
 
-    operation_mode = "GUI"  # Options: "GUI", "CREATE_DATABASE", "TRAIN"
+    operation_mode = "CREATE_DATABASE"  # Options: "GUI", "CREATE_DATABASE", "TRAIN"
 
     if operation_mode == "GUI":
         run_gui(
-            red_player=HeuristicAI("random_VS_random_perspective_RED.json", RED, gama=0.1),
-            blue_player=HeuristicAI("random_VS_random_perspective_BLUE.json", BLUE),
+            red_player=HumanPlayer(),
+            blue_player=NeuralAI("hex_model_v3.pth", BLUE)
         )
 
     elif operation_mode == "CREATE_DATABASE":
         create_database(
-            num_games=100,
-            red_player=HeuristicAI("random_VS_random_perspective_RED.json", RED, gama=0.1),
-            blue_player=HeuristicAI("random_VS_random_perspective_BLUE.json", BLUE),
-            save_games=False,
-            perspective=RED
+            num_games=1000,
+            red_player=RandomAI(),
+            blue_player=RandomAI(),
+            save_games=True
         )
 
     elif operation_mode == "TRAIN":
         train_neural_network(
-            database_filename="board_database_250_000_games_heuristic.json",
-            epochs=20,
+            database_filename="heuristic_VS_heuristic_perspective_BLUE.json",
+            epochs=10,
             batch_size=64,
             learning_rate=0.01,
             train_split=0.7,
-            model_save_name="hex_model_v2",
-            early_stopping_patience=30,
-            save_interval=40
+            model_save_name="hex_model_v3",
+            early_stopping_patience=15,
+            save_interval=10
         )
 
     else:

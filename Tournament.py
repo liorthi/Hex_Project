@@ -33,44 +33,35 @@ class Tournament:
         return str(board_array.flatten().tolist())
 
     @staticmethod
-    def calculate_board_scores(board_states, winner, gamma=0.9, perspective=RED):
+    def calculate_board_scores(board_states, winner, gamma=0.99):
         """
-        Calculate scores for all board states in a game
+        Always returns scores from RED perspective.
 
-        Args:
-            board_states: List of board state numpy arrays
-            winner: 'RED', 'BLUE'
-            gamma: Discount factor (default 0.9)
-            perspective: The perspective (RED or BLUE) to save scores from
-
-        Returns:
-            dict: {board_key: score} for each board state
+        +1  RED is winning
+        -1  BLUE is winning
         """
-        # Determine outcome
-        if winner == perspective:
-            outcome = 1.0
-        else: 
-            outcome = 0.0
+
+        outcome = 1.0 if winner == 'RED' else -1.0
 
         N = len(board_states)
         board_scores = {}
 
         for i, board_state in enumerate(board_states):
-            # Calculate score: outcome * gamma^(N-i-1)
+            # score = outcome * (gamma ** (N - i - 1)) means:
             score = outcome * (gamma ** (N - i - 1))
-            board_key = Tournament.board_to_key(board_state)
-            board_scores[board_key] = score
+
+            key = Tournament.board_to_key(board_state)
+            board_scores[key] = score
 
         return board_scores
 
 
-    def run_multiple_games(self, verbose=False, perspective=RED):
+    def run_multiple_games(self, verbose=False):
         """
         Run multiple games and collect results
 
         Args:
             verbose: Print game progress
-            perspective: The perspective (RED or BLUE) to save the database for
 
         Returns:
             tuple: (results list, board_database dict, winners dict)
@@ -84,6 +75,9 @@ class Tournament:
         game = Game(self.board_size, self.players[RED], self.players[BLUE])
 
         for i in range(self.num_games):
+            if verbose or (i % 10_000 == 0 and i > 0):
+                print(f"Completed {i} games...")
+
             # Play game
             game.reset_game()
             result = game.play(verbose=verbose and i == 1)  # print only the first game
@@ -95,7 +89,6 @@ class Tournament:
                 result['board_states'],
                 result['winner'],
                 self.gamma,
-                perspective
             )
 
             # Update board database with dynamic averaging
