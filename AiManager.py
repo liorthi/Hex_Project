@@ -141,6 +141,6 @@ class HexNet(nn.Module):
 
         # Output layer
         x = self.output(x)
-        x = torch.sigmoid(x)
+        x = torch.tanh(x)
 
         return x

@@ -207,18 +207,18 @@ def main():
         - "TRAIN": Train neural network on existing database
     """
 
-    operation_mode = "GUI"  # Options: "GUI", "CREATE_DATABASE", "TRAIN"
+    operation_mode = "CREATE_DATABASE"  # Options: "GUI", "CREATE_DATABASE", "TRAIN"
 
     if operation_mode == "GUI":
         run_gui(
-            red_player=NeuralAI("hex_model_v3_epoch_180.pth", RED), 
+            red_player=NeuralAI("hex_model_v4_epoch_225.pth", RED), 
             blue_player=HumanPlayer()
         )
 
     elif operation_mode == "CREATE_DATABASE":
         create_database(
             num_games=100,
-            red_player=NeuralAI("hex_model_v3_epoch_180.pth", RED),
+            red_player=NeuralAI("hex_model_v4_epoch_225.pth", RED),
             blue_player=GreedyAI("RED_heuristic_VS_BLUE_heuristic_100000.json", BLUE),
             save_games=False
         )
@@ -230,7 +230,7 @@ def main():
             batch_size=64,
             learning_rate=0.001,
             train_split=0.7,
-            model_save_name="hex_model_v3",
+            model_save_name="hex_model_v4",
             early_stopping_patience=15,
             save_interval=15
         )
