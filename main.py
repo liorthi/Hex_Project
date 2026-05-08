@@ -27,10 +27,14 @@ def run_gui(red_player=RandomAI(), blue_player=RandomAI()):
         blue_player=blue_player
     )
 
-    ui = HexWidget(controller)
-    controller.set_ui(ui)
+    ui = None 
 
     def launch_game():
+        nonlocal ui
+
+        ui = HexWidget(controller) 
+        controller.set_ui(ui)
+
         ui.show()
 
     welcome = WelcomeWidget(on_start=launch_game)
@@ -207,12 +211,12 @@ def main():
         - "TRAIN": Train neural network on existing database
     """
 
-    operation_mode = "CREATE_DATABASE"  # Options: "GUI", "CREATE_DATABASE", "TRAIN"
+    operation_mode = "GUI"  # Options: "GUI", "CREATE_DATABASE", "TRAIN"
 
     if operation_mode == "GUI":
         run_gui(
             red_player=NeuralAI("hex_model_v4_epoch_225.pth", RED), 
-            blue_player=HumanPlayer()
+            blue_player=NeuralAI("hex_model_v4_epoch_225.pth", BLUE)
         )
 
     elif operation_mode == "CREATE_DATABASE":
